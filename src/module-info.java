@@ -1,2 +1,0 @@
-module InformationRetrievalAssigment2023 {
-}
