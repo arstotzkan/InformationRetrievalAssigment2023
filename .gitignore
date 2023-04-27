@@ -1,6 +1,6 @@
 index/
 .idea/
-*.class
+target/
 
 ### IntelliJ IDEA ###
 out/
