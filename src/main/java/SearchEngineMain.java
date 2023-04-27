@@ -120,25 +120,25 @@ public class SearchEngineMain {
 	}
 
 	public static void searchManually(){
-		String query = "";
-		while (!query.equals("0")){
-			query = "";
-			while (query.equals("")) {
+		String searchQuery = "";
+		while (!searchQuery.equals("0")){
+			searchQuery = "";
+			while (searchQuery.equals("")) {
 				System.out.print("\033[H\033[2J");
 				System.out.flush(); //clean data from terminal
 
 				Scanner input = new Scanner(System.in);
 				System.out.println("Enter query (or press '0' to quit) : ");
 				System.out.print(">> ");
-				query = input.nextLine();
+				searchQuery = input.nextLine();
 			}
 
-			if(query.equals("0"))
+			if(searchQuery.equals("0"))
 				return;
 
-			ScoreDoc[] results = findResults(query);
+			ScoreDoc[] results = findResults(searchQuery);
 			try{
-				System.out.println(results.length + " total matching documents");
+				System.out.println(results.length + " total matching documents for" + searchQuery);
 				IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation))); //IndexReader is an abstract class, providing an interface for accessing an index.
 
 				for(int i=0; i<results.length; i++){
@@ -165,9 +165,7 @@ public class SearchEngineMain {
 			// create a query parser on the field "contents"
 			QueryParser parser = new QueryParser("contents", analyzer);
 			Query query = parser.parse(searchQuery);
-
-			System.out.println("Searching for: " + query.toString());
-
+			
 			TopDocs results = indexSearcher.search(query, MAX_SEARCH_RESULTS);
 			return results.scoreDocs;
 		}
