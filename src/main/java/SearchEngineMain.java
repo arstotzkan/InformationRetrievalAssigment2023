@@ -36,7 +36,7 @@ public class SearchEngineMain {
 		try {
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
-			search();
+			searchManually();
 		} catch (IOException e) {
 			System.out.println("Could not read the file");
 		}
@@ -119,7 +119,7 @@ public class SearchEngineMain {
 		}
 	}
 
-	public static void search(){
+	public static void searchManually(){
 		String query = "";
 		while (!query.equals("0")){
 			query = "";
@@ -143,7 +143,7 @@ public class SearchEngineMain {
 
 				for(int i=0; i<results.length; i++){
 					Document hitDoc = indexReader.document(results[i].doc);
-					System.out.println("\tScore "+results[i].score + "\tid=" + hitDoc.get("id")   +"\ttitle="+hitDoc.get("title"));
+					System.out.println("\tScore: "+results[i].score + "\tid: " + hitDoc.get("id")   +"\ttitle: "+hitDoc.get("title"));
 				}
 
 			}
