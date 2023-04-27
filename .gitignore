@@ -1,6 +1,7 @@
 index/
 .idea/
 target/
+target/classes/SearchEngineMain.class
 
 ### IntelliJ IDEA ###
 out/
@@ -33,3 +34,4 @@ bin/
 .DS_Store
 /target/classes/
 /target/
+
