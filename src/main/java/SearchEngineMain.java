@@ -29,6 +29,8 @@ import javax.print.Doc;
 public class SearchEngineMain {
 
 	static String indexLocation = ("index");
+	final static int MAX_SEARCH_RESULTS = 20;
+
 	public static void main (String[] args) {
 		//run queries
 		try {
@@ -63,9 +65,13 @@ public class SearchEngineMain {
 				if(st.equals(" /// ")){
 					Document doc = new Document();
 					//maybe needs some more splitting
-					TextField contents = new TextField("contents", text, Field.Store.YES);
+					String[] titleAndContent = text.split(":", 2);
+
+					TextField title = new TextField("title", titleAndContent[0], Field.Store.YES); //TODO: there might be better to find a better way to split
+					TextField contents = new TextField("contents", text, Field.Store.NO);
 					StoredField docId = new StoredField("id", id);
 					doc.add(docId);
+					doc.add(title);
 					doc.add(contents);
 					documentList.add(doc);
 					text = "";
@@ -137,7 +143,7 @@ public class SearchEngineMain {
 
 				for(int i=0; i<results.length; i++){
 					Document hitDoc = indexReader.document(results[i].doc);
-					System.out.println("\tScore "+results[i].score + "\tid=" + hitDoc.get("id")   +"\tcontent="+hitDoc.get("contents"));
+					System.out.println("\tScore "+results[i].score + "\tid=" + hitDoc.get("id")   +"\ttitle="+hitDoc.get("title"));
 				}
 
 			}
@@ -162,7 +168,7 @@ public class SearchEngineMain {
 
 			System.out.println("Searching for: " + query.toString());
 
-			TopDocs results = indexSearcher.search(query, 10);
+			TopDocs results = indexSearcher.search(query, MAX_SEARCH_RESULTS);
 			return results.scoreDocs;
 		}
 		catch (Exception e){
