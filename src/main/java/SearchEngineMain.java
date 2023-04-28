@@ -44,7 +44,7 @@ public class SearchEngineMain {
 				option = "";
 
 				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-					System.out.println("1)Read query file\n2)Search manually\n0)Exit");
+					System.out.println("1)Read queries from file / Export for trec_eval  \n2)Search manually\n0)Exit");
 					option = input.nextLine();
 				}
 
