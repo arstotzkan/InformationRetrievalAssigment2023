@@ -193,7 +193,8 @@ public class SearchEngineMain {
 					for (int j = 0; j < results.length; j++){
 						Document hitDoc = indexReader.document(results[j].doc);
 						myWriter.write(i + 1  < 10 ? "Q0"+ (i + 1) : "Q"+ (i + 1)); //query code
-						myWriter.write("\tQ0\t" + hitDoc.get("id") + "\t1\n"); //query code
+						myWriter.write("\tQ0\t" + hitDoc.get("id") + "\t1"); //query code
+						myWriter.write(System.lineSeparator()); //need to do this
 					}
 				} catch(Exception e){
 					e.printStackTrace();
