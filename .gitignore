@@ -2,7 +2,7 @@ index/
 .idea/
 target/
 target/classes/SearchEngineMain.class
-collection/results/
+results/
 
 ### IntelliJ IDEA ###
 out/

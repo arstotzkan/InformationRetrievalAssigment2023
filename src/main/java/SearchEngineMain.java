@@ -36,10 +36,29 @@ public class SearchEngineMain {
 		try {
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
-//			searchFromFile(20);
-//			searchFromFile(30);
-//			searchFromFile(50);
-			searchManually();
+
+			Scanner input = new Scanner(System.in);
+			String option = "";
+
+			while(true){
+				option = "";
+
+				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
+					System.out.println("1)Read query file\n2)Search manually\n0)Exit");
+					option = input.nextLine();
+				}
+
+				if (option.equals("0"))
+					break;
+				else if (option.equals("1")){
+					searchFromFile("collection/queries.txt" , 20);
+					searchFromFile("collection/queries.txt" ,30);
+					searchFromFile("collection/queries.txt" ,50);
+				}
+				else{
+					searchManually();
+				}
+			}
 		} catch (IOException e) {
 			System.out.println("Could not read the file");
 		}
@@ -87,7 +106,7 @@ public class SearchEngineMain {
 
 		br.close();
 		Date end = new Date();
-		System.out.println("Parsing completed in " + (end.getTime() - start.getTime()) + " ms \n");
+		System.out.println("Parsing completed in " + (end.getTime() - start.getTime()) + " ms");
 		return documentList;
 	}
 	
@@ -112,9 +131,7 @@ public class SearchEngineMain {
 			indexWriter.close();
 
 			Date end = new Date();
-			System.out.println("Indexing completed in " + (end.getTime() - start.getTime()) + " ms\nPress any button to continue");
-			Scanner input = new Scanner(System.in);
-			input.nextLine();
+			System.out.println("Indexing completed in " + (end.getTime() - start.getTime()) + " ms\n");
 		}
 		catch (IOException e){
 			System.out.println(" caught a " + e.getClass() +
@@ -124,7 +141,7 @@ public class SearchEngineMain {
 
 	public static void searchManually(){
 		String searchQuery = "";
-		while (!searchQuery.equals("0")){
+		while (true){
 			searchQuery = "";
 			while (searchQuery.equals("")) {
 				System.out.print("\033[H\033[2J");
@@ -157,12 +174,14 @@ public class SearchEngineMain {
 	}
 
 
-	public static void searchFromFile(int maxResults){
+	public static void searchFromFile(String filepath, int maxResults){
 		try{
+			Date start = new Date();
+			System.out.println("Fetching top " + maxResults + " results from file " + filepath);
 
-			ArrayList<String> queries = getQueriesFromFile("collection/queries.txt");
-			Files.createDirectories(Paths.get("collection/results"));
-			String resultFile = "collection/results/top"+ maxResults +"queryResults.txt";
+			ArrayList<String> queries = getQueriesFromFile(filepath);
+			Files.createDirectories(Paths.get("results"));
+			String resultFile = "results/top"+ maxResults +"queryResults.txt";
 			File myObj = new File(resultFile);
 			FileWriter myWriter = new FileWriter(resultFile);
 
@@ -183,6 +202,9 @@ public class SearchEngineMain {
 			}
 
 			myWriter.close();
+			Date end = new Date();
+			System.out.println("Process completed in " + (end.getTime() - start.getTime()) + " ms\n");
+
 		}
 		catch (Exception e){
 			System.out.println(" caught a " + e.getClass() +
