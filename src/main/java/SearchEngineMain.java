@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,13 +30,15 @@ import javax.print.Doc;
 public class SearchEngineMain {
 
 	static String indexLocation = ("index");
-	final static int MAX_SEARCH_RESULTS = 20;
 
 	public static void main (String[] args) {
 		//run queries
 		try {
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
+//			searchFromFile(20);
+//			searchFromFile(30);
+//			searchFromFile(50);
 			searchManually();
 		} catch (IOException e) {
 			System.out.println("Could not read the file");
@@ -136,9 +139,9 @@ public class SearchEngineMain {
 			if(searchQuery.equals("0"))
 				return;
 
-			ScoreDoc[] results = findResults(searchQuery);
+			ScoreDoc[] results = findResults(searchQuery, 20);
 			try{
-				System.out.println(results.length + " total matching documents for" + searchQuery);
+				System.out.println(results.length + " total matching documents for " + searchQuery);
 				IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation))); //IndexReader is an abstract class, providing an interface for accessing an index.
 
 				for(int i=0; i<results.length; i++){
@@ -154,7 +157,39 @@ public class SearchEngineMain {
 	}
 
 
-	public static ScoreDoc[] findResults(String searchQuery) {
+	public static void searchFromFile(int maxResults){
+		try{
+
+			ArrayList<String> queries = getQueriesFromFile("collection/queries.txt");
+			Files.createDirectories(Paths.get("collection/results"));
+			String resultFile = "collection/results/top"+ maxResults +"queryResults.txt";
+			File myObj = new File(resultFile);
+			FileWriter myWriter = new FileWriter(resultFile);
+
+			for (int i = 0; i < queries.size(); i++){
+				ScoreDoc[] results = findResults(queries.get(i), maxResults);
+
+				IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation)));
+				try{
+					for (int j = 0; j < results.length; j++){
+						Document hitDoc = indexReader.document(results[j].doc);
+						myWriter.write(i + 1  < 10 ? "Q0"+ (i + 1) : "Q"+ (i + 1)); //query code
+						myWriter.write("\tQ0\t" + hitDoc.get("id") + "\t1\n"); //query code
+					}
+				} catch(Exception e){
+					e.printStackTrace();
+				}
+
+			}
+
+			myWriter.close();
+		}
+		catch (Exception e){
+			System.out.println(" caught a " + e.getClass() +
+					"\n with message: " + e.getMessage());
+		}
+	}
+	private static ScoreDoc[] findResults(String searchQuery, int maxResults) {
 		try{
 			IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation))); //IndexReader is an abstract class, providing an interface for accessing an index.
 			IndexSearcher indexSearcher = new IndexSearcher(indexReader); //Creates a searcher searching the provided index, Implements search over a single IndexReader.
@@ -166,7 +201,7 @@ public class SearchEngineMain {
 			QueryParser parser = new QueryParser("contents", analyzer);
 			Query query = parser.parse(searchQuery);
 			
-			TopDocs results = indexSearcher.search(query, MAX_SEARCH_RESULTS);
+			TopDocs results = indexSearcher.search(query, maxResults);
 			return results.scoreDocs;
 		}
 		catch (Exception e){
@@ -175,5 +210,29 @@ public class SearchEngineMain {
 		}
 
 		return null;
+	}
+
+	private static ArrayList<String> getQueriesFromFile(String filepath){
+		try{
+			String[] lines = new Scanner(new File(filepath)).useDelimiter("\\Z").next().split("\n");
+			ArrayList<String> queryList = new ArrayList<String>();
+
+			for (int i = 0; i < lines.length; i++)
+				if (
+						i != 0 && //if not Q01
+								!lines[i].contains("///") && //if not query number
+								!lines[i - 1].contains("///") //if not seperator
+				){
+					queryList.add(lines[i]);
+				}
+
+			return queryList;
+		}
+		catch (IOException e){
+			System.out.println(" caught a " + e.getClass() +
+					"\n with message: " + e.getMessage());
+
+			return null;
+		}
 	}
 }
