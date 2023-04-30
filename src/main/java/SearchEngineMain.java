@@ -193,7 +193,10 @@ public class SearchEngineMain {
 					for (int j = 0; j < results.length; j++){
 						Document hitDoc = indexReader.document(results[j].doc);
 						myWriter.write(i + 1  < 10 ? "Q0"+ (i + 1) : "Q"+ (i + 1)); //query code
-						myWriter.write("\tQ0\t" + hitDoc.get("id") + "\t1"); //query code
+						myWriter.write("\t0"); // iter
+						myWriter.write("\t" + hitDoc.get("id") + "\t0"); //doc id , rank
+						myWriter.write("\t" + results[j].score); // similarity
+						myWriter.write("\tmyIRmethod"); // method name
 						myWriter.write(System.lineSeparator()); //need to do this
 					}
 				} catch(Exception e){
