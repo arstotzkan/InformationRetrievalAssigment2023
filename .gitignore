@@ -2,7 +2,9 @@ index/
 .idea/
 target/
 target/classes/SearchEngineMain.class
-results/
+collection/top20queryResults.txt
+collection/top30queryResults.txt
+collection/top50queryResults.txt
 
 ### IntelliJ IDEA ###
 out/

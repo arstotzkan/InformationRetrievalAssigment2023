@@ -54,6 +54,7 @@ public class SearchEngineMain {
 					searchFromFile("collection/queries.txt" , 20);
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
+					runTrecEval();
 				}
 				else{
 					searchManually();
@@ -180,8 +181,7 @@ public class SearchEngineMain {
 			System.out.println("Fetching top " + maxResults + " results from file " + filepath);
 
 			ArrayList<String> queries = getQueriesFromFile(filepath);
-			Files.createDirectories(Paths.get("results"));
-			String resultFile = "results/top"+ maxResults +"queryResults.txt";
+			String resultFile = "collection/top"+ maxResults +"queryResults.txt";
 			File myObj = new File(resultFile);
 			FileWriter myWriter = new FileWriter(resultFile);
 
@@ -259,6 +259,16 @@ public class SearchEngineMain {
 					"\n with message: " + e.getMessage());
 
 			return null;
+		}
+	}
+
+	private static void runTrecEval(){
+
+		try{
+			Runtime.getRuntime().exec("cmd /c start \"\" collection\\run_trec_eval.bat");
+		}
+		catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 }
