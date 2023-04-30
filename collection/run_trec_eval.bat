@@ -1,13 +1,13 @@
 cd collection/
 REM change dir into the dir where trec_eval exists
 
-echo first 20 texts
+echo Comparing qrels.txt with top20queryResults.txt
 trec_eval qrels.txt top20queryResults.txt
 
-echo first 30 texts
+echo Comparing qrels.txt with top30queryResults.txt
 trec_eval qrels.txt top30queryResults.txt
 
-echo first 50 texts
+echo Comparing qrels.txt with top50queryResults.txt
 trec_eval qrels.txt top50queryResults.txt
 echo Process Completed\nPress any button to exit...
 timeout /t -1

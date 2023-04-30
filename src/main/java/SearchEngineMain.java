@@ -29,10 +29,14 @@ import javax.print.Doc;
 
 public class SearchEngineMain {
 
-	static String indexLocation = ("index");
+	final static String indexLocation = ("index");
 
+	/**
+	 * main method of SearchEngineMain
+	 * @param args
+	 * @author Anastasios Aggelidis / Panagiotis Lampropoulos
+	 */
 	public static void main (String[] args) {
-		//run queries
 		try {
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
@@ -44,7 +48,7 @@ public class SearchEngineMain {
 				option = "";
 
 				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-					System.out.println("1)Read queries from file / Export for trec_eval  \n2)Search manually\n0)Exit");
+					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
 					option = input.nextLine();
 				}
 
@@ -55,8 +59,7 @@ public class SearchEngineMain {
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
 					runTrecEval();
-				}
-				else{
+				} else{
 					searchManually();
 				}
 			}
@@ -64,7 +67,13 @@ public class SearchEngineMain {
 			System.out.println("Could not read the file");
 		}
 	}
-	
+
+	/**
+	 * breaks documents.txt into a list of Lucene Documents
+	 * @return ArrayList of documents
+	 * @throws IOException
+	 * @author Anastasios Aggelidis
+	 */
 	public static ArrayList<Document> parseDocuments() throws IOException {
 		Date start = new Date();
 
@@ -81,8 +90,8 @@ public class SearchEngineMain {
 		String text = "";
 		ArrayList<Document> documentList = new ArrayList<>();
 		while ((st = br.readLine()) != null){
-			try {  
-				Integer.parseInt(st);  
+			try {
+				Integer.parseInt(st);
 				id = st;
 			} catch(NumberFormatException e){
 				if(st.equals(" /// ")){
@@ -98,8 +107,7 @@ public class SearchEngineMain {
 					doc.add(contents);
 					documentList.add(doc);
 					text = "";
-				} 
-				else{ 
+				} else{
 					text += st;
 				}
 			}
@@ -110,7 +118,12 @@ public class SearchEngineMain {
 		System.out.println("Parsing completed in " + (end.getTime() - start.getTime()) + " ms");
 		return documentList;
 	}
-	
+
+	/**
+	 * creates an index on the indexLocation directory
+	 * @param docs (a list of documents)
+	 * @author Panagiotis Lampropoulos
+	 */
 	public static void createIndex(ArrayList<Document> docs) {
 		Date start = new Date();
 
@@ -125,7 +138,6 @@ public class SearchEngineMain {
 			IndexWriter indexWriter = new IndexWriter(dir, iwc);
 
 			for (Document doc : docs){
-				//System.out.println("adding " + doc.getField("id"));
 				indexWriter.addDocument(doc);
 			}
 
@@ -133,21 +145,22 @@ public class SearchEngineMain {
 
 			Date end = new Date();
 			System.out.println("Indexing completed in " + (end.getTime() - start.getTime()) + " ms\n");
-		}
-		catch (IOException e){
+		} catch (IOException e){
 			System.out.println(" caught a " + e.getClass() +
 					"\n with message: " + e.getMessage());
 		}
 	}
 
+	/**
+	 * manual searching mode, mostly developed for debugging
+	 * shows titles of top 20 matching documents
+	 * @author Panagiotis Lampropoulos
+	 */
 	public static void searchManually(){
 		String searchQuery = "";
 		while (true){
 			searchQuery = "";
 			while (searchQuery.equals("")) {
-				System.out.print("\033[H\033[2J");
-				System.out.flush(); //clean data from terminal
-
 				Scanner input = new Scanner(System.in);
 				System.out.println("Enter query (or press '0' to quit) : ");
 				System.out.print(">> ");
@@ -167,14 +180,19 @@ public class SearchEngineMain {
 					System.out.println("\tScore: "+results[i].score + "\tid: " + hitDoc.get("id")   +"\ttitle: "+hitDoc.get("title"));
 				}
 
-			}
-			catch(Exception e){
+			} catch(Exception e){
 				e.printStackTrace();
 			}
 		}
 	}
 
 
+	/**
+	 * @param filepath the filepath which the queries are located in
+	 * @param maxResults the maximum number of results we want to find
+	 * creates a text file which can be used by trec_eval
+	 * @author Anastasios Aggelidis / Panagiotis Lampropoulos
+	 */
 	public static void searchFromFile(String filepath, int maxResults){
 		try{
 			Date start = new Date();
@@ -209,12 +227,19 @@ public class SearchEngineMain {
 			Date end = new Date();
 			System.out.println("Process completed in " + (end.getTime() - start.getTime()) + " ms\n");
 
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			System.out.println(" caught a " + e.getClass() +
 					"\n with message: " + e.getMessage());
 		}
 	}
+
+
+	/**
+	 * @param searchQuery the text of the query made by the user
+	 * @param maxResults the maximum number of results to be shown
+	 * @return a ScoreDoc array of the top results
+	 * @author Panagiotis Lampropoulos
+	 */
 	private static ScoreDoc[] findResults(String searchQuery, int maxResults) {
 		try{
 			IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation))); //IndexReader is an abstract class, providing an interface for accessing an index.
@@ -226,11 +251,10 @@ public class SearchEngineMain {
 			// create a query parser on the field "contents"
 			QueryParser parser = new QueryParser("contents", analyzer);
 			Query query = parser.parse(searchQuery);
-			
+
 			TopDocs results = indexSearcher.search(query, maxResults);
 			return results.scoreDocs;
-		}
-		catch (Exception e){
+		} catch (Exception e){
 			System.out.println(" caught a " + e.getClass() +
 					"\n with message: " + e.getMessage());
 		}
@@ -238,6 +262,11 @@ public class SearchEngineMain {
 		return null;
 	}
 
+	/**
+	 * @param filepath the filepath we want to get the queries from
+	 * @return a ArrayList of strings (the queries)
+	 * @author Panagiotis Lampropoulos
+	 */
 	private static ArrayList<String> getQueriesFromFile(String filepath){
 		try{
 			String[] lines = new Scanner(new File(filepath)).useDelimiter("\\Z").next().split("\n");
@@ -253,8 +282,7 @@ public class SearchEngineMain {
 				}
 
 			return queryList;
-		}
-		catch (IOException e){
+		} catch (IOException e){
 			System.out.println(" caught a " + e.getClass() +
 					"\n with message: " + e.getMessage());
 
@@ -262,12 +290,16 @@ public class SearchEngineMain {
 		}
 	}
 
+	/**
+	 * method that executes the run_trec_eval.bat batch file
+	 * this batch file runs trec_eval, comparing collection\qrels.txt with the files generated by searchFromFile()
+	 * @author Panagiotis Lampropoulos
+	 */
 	private static void runTrecEval(){
 
 		try{
 			Runtime.getRuntime().exec("cmd /c start \"\" collection\\run_trec_eval.bat");
-		}
-		catch(Exception e){
+		} catch(Exception e){
 			e.printStackTrace();
 		}
 	}
