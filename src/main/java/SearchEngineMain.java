@@ -1,12 +1,18 @@
 import java.io.*;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Scanner;
+import java.util.*;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.core.StopFilterFactory;
+import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.en.EnglishPossessiveFilterFactory;
+import org.apache.lucene.analysis.en.PorterStemFilterFactory;
+import org.apache.lucene.analysis.standard.StandardFilterFactory;
+import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilterFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StoredField;
@@ -25,8 +31,6 @@ import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
-import javax.print.Doc;
-
 public class SearchEngineMain {
 
 	final static String indexLocation = ("index");
@@ -34,12 +38,13 @@ public class SearchEngineMain {
 	/**
 	 * main method of SearchEngineMain
 	 * @param args
-	 * @author Anastasios Aggelidis / Panagiotis Lampropoulos
+	 * @author Anastasios Angelidis / Panagiotis Lampropoulos
 	 */
 	public static void main (String[] args) {
 		try {
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
+			filterWordnetFile();
 
 			Scanner input = new Scanner(System.in);
 			String option = "";
@@ -72,7 +77,7 @@ public class SearchEngineMain {
 	 * breaks documents.txt into a list of Lucene Documents
 	 * @return ArrayList of documents
 	 * @throws IOException
-	 * @author Anastasios Aggelidis
+	 * @author Anastasios Angelidis
 	 */
 	public static ArrayList<Document> parseDocuments() throws IOException {
 		Date start = new Date();
@@ -144,7 +149,7 @@ public class SearchEngineMain {
 			indexWriter.close();
 
 			Date end = new Date();
-			System.out.println("Indexing completed in " + (end.getTime() - start.getTime()) + " ms\n");
+			System.out.println("Indexing completed in " + (end.getTime() - start.getTime()) + " ms");
 		} catch (IOException e){
 			System.out.println(" caught a " + e.getClass() +
 					"\n with message: " + e.getMessage());
@@ -191,7 +196,7 @@ public class SearchEngineMain {
 	 * @param filepath the filepath which the queries are located in
 	 * @param maxResults the maximum number of results we want to find
 	 * creates a text file which can be used by trec_eval
-	 * @author Anastasios Aggelidis / Panagiotis Lampropoulos
+	 * @author Anastasios Angelidis / Panagiotis Lampropoulos
 	 */
 	public static void searchFromFile(String filepath, int maxResults){
 		try{
@@ -246,7 +251,7 @@ public class SearchEngineMain {
 			IndexSearcher indexSearcher = new IndexSearcher(indexReader); //Creates a searcher searching the provided index, Implements search over a single IndexReader.
 			indexSearcher.setSimilarity(new BM25Similarity());
 
-			Analyzer analyzer = new EnglishAnalyzer();
+			Analyzer analyzer = customAnalyzerForQueryExpansion();
 
 			// create a query parser on the field "contents"
 			QueryParser parser = new QueryParser("contents", analyzer);
@@ -302,5 +307,59 @@ public class SearchEngineMain {
 		} catch(Exception e){
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Filters Wordnet file and keeps only hyponym nouns
+	 * @author Anastasios Angelidis
+	 */
+	private static void filterWordnetFile() throws IOException {
+		Date start = new Date();
+
+		ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+		InputStream inputStream = classloader.getResourceAsStream("wn_s.pl");
+		InputStreamReader streamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+		BufferedReader br  = new BufferedReader(streamReader);
+
+		String filteredFile = "src/main/resources/my_wn_s.pl";
+		File myObj = new File(filteredFile);
+		FileWriter myWriter = new FileWriter(filteredFile);
+
+		String ln;
+		while ((ln = br.readLine()) != null){
+			String[] noun = ln.split(",");
+			if(noun[3].equals("n")){
+				myWriter.write(ln);
+				myWriter.write(System.lineSeparator());
+			}
+		}
+
+		myWriter.close();
+
+		Date end = new Date();
+		System.out.println("Filtering Wordnet completed in " + (end.getTime() - start.getTime()) + " ms\n");
+	}
+
+	/**
+	 * Custom analyzer using wordent
+	 * @return the new analyzer
+	 * @throws IOException
+	 * @author Anastasios Angelidis
+	 */
+	private static CustomAnalyzer customAnalyzerForQueryExpansion() throws IOException {
+		Map<String, String> sffargs = new HashMap<>();
+		sffargs.put("synonyms", "my_wn_s.pl");
+		sffargs.put("format", "wordnet");
+
+		CustomAnalyzer.Builder builder = CustomAnalyzer.builder()
+				.withTokenizer(StandardTokenizerFactory.class)
+				.addTokenFilter(StandardFilterFactory.class)
+				.addTokenFilter(EnglishPossessiveFilterFactory.class)
+				.addTokenFilter(LowerCaseFilterFactory.class)
+				.addTokenFilter(StopFilterFactory.class)
+				.addTokenFilter(PorterStemFilterFactory.class)
+				.addTokenFilter(SynonymGraphFilterFactory.class, sffargs);
+		CustomAnalyzer analyzer = builder.build();
+		return analyzer;
 	}
 }
