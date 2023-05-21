@@ -328,7 +328,7 @@ public class SearchEngineMain {
 		String ln;
 		while ((ln = br.readLine()) != null){
 			String[] noun = ln.split(",");
-			if(noun[3].equals("n")){
+			if(noun[3].equals("n") && Integer.parseInt(noun[5].substring(0, noun[5].length()-2)) < 1){
 				myWriter.write(ln);
 				myWriter.write(System.lineSeparator());
 			}
