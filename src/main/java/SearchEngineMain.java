@@ -4,12 +4,16 @@ import java.nio.file.Paths;
 import java.util.*;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
 import org.apache.lucene.analysis.core.StopFilterFactory;
+import org.apache.lucene.analysis.core.WhitespaceTokenizer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilterFactory;
 import org.apache.lucene.analysis.en.PorterStemFilterFactory;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardFilterFactory;
 import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
 import org.apache.lucene.analysis.synonym.SynonymGraphFilterFactory;
@@ -30,10 +34,17 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.deeplearning4j.models.embeddings.learning.impl.elements.CBOW;
+import org.deeplearning4j.models.embeddings.learning.impl.elements.SkipGram;
+import org.deeplearning4j.models.word2vec.Word2Vec;
+import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
+import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
 
 public class SearchEngineMain {
 
 	final static String indexLocation = ("index");
+
+	private static Word2Vec vec;
 
 	/**
 	 * main method of SearchEngineMain
@@ -42,9 +53,21 @@ public class SearchEngineMain {
 	 */
 	public static void main (String[] args) {
 		try {
+			SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
+
+			vec = new Word2Vec.Builder()
+					.layerSize(20)
+					.windowSize(3)
+					.iterate(iter)
+					.elementsLearningAlgorithm(new CBOW<>())
+//					.tokenizerFactory(new LuceneTokenizerFactory(new StandardAnalyzer()))
+					.build();
+
+			vec.fit();
+
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
-			filterWordnetFile();
+//			filterWordnetFile();
 
 			Scanner input = new Scanner(System.in);
 			String option = "";
@@ -251,7 +274,15 @@ public class SearchEngineMain {
 			IndexSearcher indexSearcher = new IndexSearcher(indexReader); //Creates a searcher searching the provided index, Implements search over a single IndexReader.
 			indexSearcher.setSimilarity(new BM25Similarity());
 
-			Analyzer analyzer = customAnalyzerForQueryExpansion();
+			Analyzer analyzer = new Analyzer() {
+				@Override
+				protected TokenStreamComponents createComponents(String fieldName) {
+					Tokenizer tokenizer = new WhitespaceTokenizer();
+					double minAcc = 0.95;
+					TokenFilter synFilter = new W2VSynonymFilter(tokenizer, vec, minAcc);
+					return new TokenStreamComponents(tokenizer, synFilter);
+				}
+			};
 
 			// create a query parser on the field "contents"
 			QueryParser parser = new QueryParser("contents", analyzer);
