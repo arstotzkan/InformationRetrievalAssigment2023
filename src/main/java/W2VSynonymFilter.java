@@ -44,6 +44,7 @@ public final class W2VSynonymFilter extends TokenFilter {
 
       typeAtt.setType(SynonymFilter.TYPE_SYNONYM);
       positionIncrementAttribute.setPositionIncrement(output.posIncr);
+      //System.out.println( outputs.size() + ": " + outputs + " output: " + outputs);
       return true;
     }
 
@@ -54,7 +55,7 @@ public final class W2VSynonymFilter extends TokenFilter {
       Collection<String> list = word2Vec.similarWordsInVocabTo(word, minAccuracy);
       int i = 0;
       for (String syn : list) {
-        if (i == 2) {
+        if (i == 10) {
           break;
         }
         if (!syn.equals(word)) {
@@ -65,6 +66,7 @@ public final class W2VSynonymFilter extends TokenFilter {
           outputs.add(new PendingOutput(state, cr, positions));
           i++;
         }
+        //System.out.println( outputs.size() + ": " + outputs);
       }
     }
     return !outputs.isEmpty() || input.incrementToken();
@@ -88,5 +90,8 @@ public final class W2VSynonymFilter extends TokenFilter {
       this.charsRef = charsRef;
       this.posIncr = posIncr;
     }
+
+    public String toString() { return this.charsRef.toString();}
+
   }
 }

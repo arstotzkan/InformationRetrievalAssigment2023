@@ -6,9 +6,7 @@ import java.util.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
-import org.apache.lucene.analysis.core.StopFilterFactory;
-import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.core.*;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilterFactory;
@@ -45,7 +43,7 @@ public class SearchEngineMain {
 	final static String indexLocation = ("index");
 
 	private static Word2Vec vec;
-
+	private static Analyzer synonymAnalyzer;
 	/**
 	 * main method of SearchEngineMain
 	 * @param args
@@ -56,41 +54,52 @@ public class SearchEngineMain {
 			SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
 
 			vec = new Word2Vec.Builder()
-					.layerSize(20)
-					.windowSize(3)
+					.layerSize(200)
+					.windowSize(10)
+					.epochs(1)
 					.iterate(iter)
 					.elementsLearningAlgorithm(new CBOW<>())
-//					.tokenizerFactory(new LuceneTokenizerFactory(new StandardAnalyzer()))
+					//.tokenizerFactory(new LuceneTokenizerFactory(new StandardAnalyzer()))
 					.build();
 
 			vec.fit();
+
+			synonymAnalyzer = new Analyzer() {
+				@Override
+				protected TokenStreamComponents createComponents(String fieldName) {
+					Tokenizer tokenizer = new WhitespaceTokenizer();
+					double minAcc = 1;
+					TokenFilter synFilter = new W2VSynonymFilter(tokenizer, vec, minAcc);
+					return new TokenStreamComponents(tokenizer, synFilter);
+				}
+			};
 
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
 //			filterWordnetFile();
 
-			Scanner input = new Scanner(System.in);
-			String option = "";
-
-			while(true){
-				option = "";
-
-				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
-					option = input.nextLine();
-				}
-
-				if (option.equals("0"))
-					break;
-				else if (option.equals("1")){
+//			Scanner input = new Scanner(System.in);
+//			String option = "";
+//
+//			while(true){
+//				option = "";
+//
+//				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
+//					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
+//					option = input.nextLine();
+//				}
+//
+//				if (option.equals("0"))
+//					break;
+//				else if (option.equals("1")){
 					searchFromFile("collection/queries.txt" , 20);
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
 					runTrecEval();
-				} else{
-					searchManually();
-				}
-			}
+//				} else{
+//					searchManually();
+//				}
+//			}
 		} catch (IOException e) {
 			System.out.println("Could not read the file");
 		}
@@ -157,9 +166,8 @@ public class SearchEngineMain {
 
 		try{
 			Directory dir = FSDirectory.open(Paths.get(indexLocation));
-			Analyzer analyzer = new EnglishAnalyzer();
 			BM25Similarity similarity = new BM25Similarity();
-			IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+			IndexWriterConfig iwc = new IndexWriterConfig(new WhitespaceAnalyzer());
 			iwc.setSimilarity(similarity);
 			iwc.setOpenMode(OpenMode.CREATE);
 
@@ -236,6 +244,7 @@ public class SearchEngineMain {
 
 				IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation)));
 				try{
+					System.out.println("Query " + i + ": results: " + results.length + "(max:" + maxResults + ")");
 					for (int j = 0; j < results.length; j++){
 						Document hitDoc = indexReader.document(results[j].doc);
 						myWriter.write(i + 1  < 10 ? "Q0"+ (i + 1) : "Q"+ (i + 1)); //query code
@@ -274,18 +283,18 @@ public class SearchEngineMain {
 			IndexSearcher indexSearcher = new IndexSearcher(indexReader); //Creates a searcher searching the provided index, Implements search over a single IndexReader.
 			indexSearcher.setSimilarity(new BM25Similarity());
 
-			Analyzer analyzer = new Analyzer() {
+			// create a query parser on the field "contents"
+			synonymAnalyzer = new Analyzer() {
 				@Override
 				protected TokenStreamComponents createComponents(String fieldName) {
 					Tokenizer tokenizer = new WhitespaceTokenizer();
-					double minAcc = 0.95;
+					double minAcc = 0.9;
 					TokenFilter synFilter = new W2VSynonymFilter(tokenizer, vec, minAcc);
 					return new TokenStreamComponents(tokenizer, synFilter);
 				}
 			};
 
-			// create a query parser on the field "contents"
-			QueryParser parser = new QueryParser("contents", analyzer);
+			QueryParser parser = new QueryParser("contents", synonymAnalyzer);
 			Query query = parser.parse(searchQuery);
 
 			TopDocs results = indexSearcher.search(query, maxResults);
