@@ -55,7 +55,7 @@ public final class W2VSynonymFilter extends TokenFilter {
       Collection<String> list = word2Vec.similarWordsInVocabTo(word, minAccuracy);
       int i = 0;
       for (String syn : list) {
-        if (i == 10) {
+        if (i == 4) {
           break;
         }
         if (!syn.equals(word)) {

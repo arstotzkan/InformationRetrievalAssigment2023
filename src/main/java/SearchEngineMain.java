@@ -54,7 +54,7 @@ public class SearchEngineMain {
 			SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
 
 			vec = new Word2Vec.Builder()
-					.layerSize(200)
+					.layerSize(500)
 					.windowSize(10)
 					.epochs(1)
 					.iterate(iter)
@@ -63,16 +63,6 @@ public class SearchEngineMain {
 					.build();
 
 			vec.fit();
-
-			synonymAnalyzer = new Analyzer() {
-				@Override
-				protected TokenStreamComponents createComponents(String fieldName) {
-					Tokenizer tokenizer = new WhitespaceTokenizer();
-					double minAcc = 1;
-					TokenFilter synFilter = new W2VSynonymFilter(tokenizer, vec, minAcc);
-					return new TokenStreamComponents(tokenizer, synFilter);
-				}
-			};
 
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
@@ -244,7 +234,7 @@ public class SearchEngineMain {
 
 				IndexReader indexReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexLocation)));
 				try{
-					System.out.println("Query " + i + ": results: " + results.length + "(max:" + maxResults + ")");
+					System.out.println("Query " + (i + 1) + ": results: " + results.length + "(max:" + maxResults + ")");
 					for (int j = 0; j < results.length; j++){
 						Document hitDoc = indexReader.document(results[j].doc);
 						myWriter.write(i + 1  < 10 ? "Q0"+ (i + 1) : "Q"+ (i + 1)); //query code
