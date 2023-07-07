@@ -53,6 +53,7 @@ public final class W2VSynonymFilter extends TokenFilter {
       positionIncrementAttribute.setPositionIncrement(positions);
       String word = new String(termAtt.buffer()).trim();
       Collection<String> list = word2Vec.similarWordsInVocabTo(word, minAccuracy);
+      System.out.println("Similar to word " + word + ":" + list);
       int i = 0;
       for (String syn : list) {
         if (i == 4) {

@@ -54,8 +54,8 @@ public class SearchEngineMain {
 			SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
 
 			vec = new Word2Vec.Builder()
-					.layerSize(500)
-					.windowSize(10)
+					.layerSize(300)
+					.windowSize(5)
 					.epochs(1)
 					.iterate(iter)
 					.elementsLearningAlgorithm(new CBOW<>())
@@ -68,28 +68,28 @@ public class SearchEngineMain {
 			createIndex(docList);
 //			filterWordnetFile();
 
-//			Scanner input = new Scanner(System.in);
-//			String option = "";
-//
-//			while(true){
-//				option = "";
-//
-//				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-//					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
-//					option = input.nextLine();
-//				}
-//
-//				if (option.equals("0"))
-//					break;
-//				else if (option.equals("1")){
+			Scanner input = new Scanner(System.in);
+			String option = "";
+
+			while(true){
+				option = "";
+
+				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
+					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
+					option = input.nextLine();
+				}
+
+				if (option.equals("0"))
+					break;
+				else if (option.equals("1")){
 					searchFromFile("collection/queries.txt" , 20);
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
 					runTrecEval();
-//				} else{
-//					searchManually();
-//				}
-//			}
+				} else{
+					searchManually();
+				}
+			}
 		} catch (IOException e) {
 			System.out.println("Could not read the file");
 		}
@@ -286,6 +286,12 @@ public class SearchEngineMain {
 
 			QueryParser parser = new QueryParser("contents", synonymAnalyzer);
 			Query query = parser.parse(searchQuery);
+
+			// print queries with new terms from word2vec
+			CharSequence contents = "contents:";
+			CharSequence space = " ";
+			System.out.println("Initial search query: " + searchQuery);
+			System.out.println("After adding synonyms query: " + query.toString().replace(contents, space) + "\n");
 
 			TopDocs results = indexSearcher.search(query, maxResults);
 			return results.scoreDocs;
