@@ -55,11 +55,8 @@ public class SearchEngineMain {
 		try {
 			System.out.println(Runtime.getRuntime().maxMemory());
 
-			//File preTrainedTextFile = new File("D:\\40\\model.txt");
-			File preTrainedBinFile = new File("D:\\40\\model.bin");
-			//File preTrainedZipFile = new File("D:\\40.zip");
+			File preTrainedBinFile = new File(args[0]);
 
-			//vec = WordVectorSerializer.readWord2VecModel(preTrainedTextFile);
 			vec = WordVectorSerializer.readWord2VecModel(preTrainedBinFile);
 
 			ArrayList<Document> docList = parseDocuments();
@@ -69,25 +66,25 @@ public class SearchEngineMain {
 			Scanner input = new Scanner(System.in);
 			String option = "";
 
-//			while(true){
-//				option = "";
-//
-//				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-//					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
-//					option = input.nextLine();
-//				}
-//
-//				if (option.equals("0"))
-//					break;
-//				else if (option.equals("1")){
+			while(true){
+				option = "";
+
+				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
+					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
+					option = input.nextLine();
+				}
+
+				if (option.equals("0"))
+					break;
+				else if (option.equals("1")){
 					searchFromFile("collection/queries.txt" , 20);
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
 					runTrecEval();
-//				} else{
-//					searchManually();
-//				}
-//			}
+				} else{
+					searchManually();
+				}
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
