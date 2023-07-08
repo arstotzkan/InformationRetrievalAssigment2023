@@ -34,9 +34,11 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.deeplearning4j.models.embeddings.learning.impl.elements.CBOW;
 import org.deeplearning4j.models.embeddings.learning.impl.elements.SkipGram;
+import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
 import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
+import org.deeplearning4j.util.ModelSerializer;
 
 public class SearchEngineMain {
 
@@ -51,18 +53,14 @@ public class SearchEngineMain {
 	 */
 	public static void main (String[] args) {
 		try {
-			SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
+			System.out.println(Runtime.getRuntime().maxMemory());
 
-			vec = new Word2Vec.Builder()
-					.layerSize(300)
-					.windowSize(5)
-					.epochs(1)
-					.iterate(iter)
-					.elementsLearningAlgorithm(new CBOW<>())
-					//.tokenizerFactory(new LuceneTokenizerFactory(new StandardAnalyzer()))
-					.build();
+			//File preTrainedTextFile = new File("D:\\40\\model.txt");
+			File preTrainedBinFile = new File("D:\\40\\model.bin");
+			//File preTrainedZipFile = new File("D:\\40.zip");
 
-			vec.fit();
+			//vec = WordVectorSerializer.readWord2VecModel(preTrainedTextFile);
+			vec = WordVectorSerializer.readWord2VecModel(preTrainedBinFile);
 
 			ArrayList<Document> docList = parseDocuments();
 			createIndex(docList);
@@ -71,27 +69,27 @@ public class SearchEngineMain {
 			Scanner input = new Scanner(System.in);
 			String option = "";
 
-			while(true){
-				option = "";
-
-				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
-					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
-					option = input.nextLine();
-				}
-
-				if (option.equals("0"))
-					break;
-				else if (option.equals("1")){
+//			while(true){
+//				option = "";
+//
+//				while(!option.equals("0") && !option.equals("1") && !option.equals("2")){
+//					System.out.println("1)Read queries from file / Run trec_eval  \n2)Search manually\n0)Exit");
+//					option = input.nextLine();
+//				}
+//
+//				if (option.equals("0"))
+//					break;
+//				else if (option.equals("1")){
 					searchFromFile("collection/queries.txt" , 20);
 					searchFromFile("collection/queries.txt" ,30);
 					searchFromFile("collection/queries.txt" ,50);
 					runTrecEval();
-				} else{
-					searchManually();
-				}
-			}
+//				} else{
+//					searchManually();
+//				}
+//			}
 		} catch (IOException e) {
-			System.out.println("Could not read the file");
+			e.printStackTrace();
 		}
 	}
 
@@ -397,5 +395,18 @@ public class SearchEngineMain {
 				.addTokenFilter(SynonymGraphFilterFactory.class, sffargs);
 		CustomAnalyzer analyzer = builder.build();
 		return analyzer;
+	}
+
+	private static Word2Vec createModel() throws FileNotFoundException {
+		SentenceIterator iter = new BasicLineIterator("./collection/documents.txt");
+
+		return new Word2Vec.Builder()
+				.layerSize(300)
+				.windowSize(5)
+				.epochs(1)
+				.iterate(iter)
+				.elementsLearningAlgorithm(new CBOW<>())
+				//.tokenizerFactory(new LuceneTokenizerFactory(new StandardAnalyzer()))
+				.build();
 	}
 }
